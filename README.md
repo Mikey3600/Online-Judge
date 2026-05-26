@@ -241,7 +241,7 @@ npm start
 - [Mongoose Docs](https://mongoosejs.com/docs/)
 ---
  
-## 👤 Author
+##  Author
  
 **Mayank** — CS Undergraduate, KIIT  
 GitHub: [@Mikey3600](https://github.com/Mikey3600)
