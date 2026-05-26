@@ -201,7 +201,7 @@ Constraints enforced per container:
  
 ---
  
-##  Local Setup (Coming Soon)
+##  Local Setup 
  
 ```bash
 # Clone the repo
