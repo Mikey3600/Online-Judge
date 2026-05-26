@@ -89,18 +89,18 @@ online-judge/
 {
   name: String,
   statement: String,
-  code: String,           // unique problem code e.g. "P001"
-  difficulty: String      // "Easy" | "Medium" | "Hard"
+  code: String,           
+  difficulty: String      
 }
 ```
  
 ### Collection 2 — `solutions`
 ```
 {
-  problem: ObjectId,      // ref → problems
-  user: ObjectId,         // ref → users
-  verdict: String,        // "Accepted" | "Wrong Answer" | "TLE" | "RE"
-  submitted_at: Date      // auto
+  problem: ObjectId,      
+  user: ObjectId,         
+  verdict: String,        
+  submitted_at: Date      
 }
 ```
  
@@ -109,7 +109,7 @@ online-judge/
 {
   input: String,
   output: String,
-  problem: ObjectId       // ref → problems
+  problem: ObjectId       
 }
 ```
  
