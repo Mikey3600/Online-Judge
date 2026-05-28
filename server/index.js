@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const app = express();
 const authRoutes = require('./routes/auth');
+const problemRoutes = require('./routes/problems');
 
 
 // Middleware
@@ -15,6 +16,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/problems', problemRoutes);
 app.get('/', (req, res) => {
     res.json({ message: 'Online Judge API is running' });
 });
