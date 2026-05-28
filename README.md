@@ -185,7 +185,7 @@ Constraints enforced per container:
 | Day 1 | — | Repo setup, README, project structure, `.gitignore`, `.env.example` |  Done |
 | Day 2 | — | MongoDB schemas (Problem, Solution, TestCase, User) | Done  |
 | Day 3 | — | Express server setup, basic routes, Mongoose connection | Done |
-| Day 4 | — | Auth system — register, login, JWT middleware |  |
+| Day 4 | — | Auth system — register, login, JWT middleware | Done |
 | Day 5 | — | Problem CRUD routes + controllers |  |
 | Day 6 | — | Code submission route + child_process local execution |  |
 | Day 7 | — | Docker container setup + integrate with submission pipeline |  |
@@ -226,7 +226,7 @@ npm start
 ##  Security Considerations
  
 - Passwords hashed with `bcrypt` before storing
-- JWT tokens expire after 24h
+- JWT tokens expire after 7d
 - Code execution fully isolated inside Docker
 - No user code ever touches the host filesystem directly
 - Protected routes verified via middleware before any DB access
