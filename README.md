@@ -184,7 +184,7 @@ Constraints enforced per container:
 |-----|------|------|--------|
 | Day 1 | — | Repo setup, README, project structure, `.gitignore`, `.env.example` |  Done |
 | Day 2 | — | MongoDB schemas (Problem, Solution, TestCase, User) | Done  |
-| Day 3 | — | Express server setup, basic routes, Mongoose connection |  |
+| Day 3 | — | Express server setup, basic routes, Mongoose connection | Done |
 | Day 4 | — | Auth system — register, login, JWT middleware |  |
 | Day 5 | — | Problem CRUD routes + controllers |  |
 | Day 6 | — | Code submission route + child_process local execution |  |
