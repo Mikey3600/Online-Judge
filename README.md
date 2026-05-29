@@ -225,7 +225,7 @@ npm start
  
 ##  Security Considerations
  
-- Passwords hashed with `bcrypt` before storing
+- Passwords hashed with `bcrypt` and `salt` before storing
 - JWT tokens expire after 7d
 - Code execution fully isolated inside Docker
 - No user code ever touches the host filesystem directly
