@@ -38,7 +38,7 @@ const submitCode = async (req, res) => {
                 verdict = 'Runtime Error';
                 break;
             }
-            if (result.output !== tc.output.trim()) {
+            if (result.output.trim() !== tc.output.trim())  {
                 verdict = 'Wrong Answer';
                 break;
             }
