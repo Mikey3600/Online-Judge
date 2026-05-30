@@ -62,14 +62,18 @@ online-judge/
 │   │   ├── auth.js
 │   │   ├── problems.js
 │   │   ├── solutions.js
-│   │   └── leaderboard.js
+│   │   ├── leaderboard.js
+│   │   └── testCases.js
 │   ├── controllers/          # Business logic
 │   │   ├── authController.js
 │   │   ├── problemController.js
-│   │   └── submissionController.js
-│   ├── middleware/            # JWT verification, error handling
+│   │   ├── submissionController.js
+│   │   ├── leaderboardController.js
+│   │   └── testCaseController.js
+│   ├── middleware/
+│   │   └── auth.js           # JWT verification
 │   ├── executors/            # Docker execution logic
-│   │   └── runCode.js        # child_process + docker exec
+│   │   └── runCode.js        # docker cp + docker exec
 │   └── index.js              # Entry point
 │
 ├── docker/
