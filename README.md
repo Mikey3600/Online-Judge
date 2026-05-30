@@ -228,7 +228,7 @@ Each runs through Docker pipeline
 Verdict saved → user notified (was "pending" until processed)
 ```
  
-This is exactly how Codeforces works — you see **"In Queue"** before getting a verdict. The queue buffers incoming load so the execution system is never overwhelmed.
+
  
 **Current state:** Synchronous per request — sufficient for development.  
 **Production upgrade:** Bull + Redis queue with fixed worker pool.
