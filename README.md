@@ -289,20 +289,20 @@ docker exec oj-gcc sh -c "/tmp/solution_<timestamp> < /tmp/input_<timestamp>.txt
  
 | Day | Date | Task | Status |
 |-----|------|------|--------|
-| Day 1 | 26-05-2026 | Repo setup, README, project structure, `.gitignore`, `.env.example` | ✅ Done |
-| Day 2 | 27-05-2026 | MongoDB schemas (Problem, Solution, TestCase, User) | ✅ Done |
-| Day 3 | 28-05-2026 | Express server setup, MongoDB Atlas connection | ✅ Done |
-| Day 4 | 28-05-2026 | Auth system — register, login, logout, JWT httpOnly cookie | ✅ Done |
-| Day 5 | 29-05-2026 | Problem CRUD + TestCase routes with JWT protection | ✅ Done |
-| Day 6 | 30-05-2026 | Submission pipeline + Leaderboard controller | ✅ Done |
-| Day 7 | 30-06-2026 | Docker GCC container + full submission pipeline tested | ✅ Done |
-| Day 8 | — | React frontend — routing, pages scaffold | 🔲 |
-| Day 9 | — | Connect frontend to backend (problem list, problem page) | 🔲 |
-| Day 10 | — | Submission UI + verdict display | 🔲 |
-| Day 11 | — | Leaderboard page | 🔲 |
-| Day 12 | — | Profile page + submission history | 🔲 |
-| Day 13 | — | Testing, bug fixes, edge cases | 🔲 |
-| Day 14 | — | Final cleanup, documentation, demo | 🔲 |
+| Day 1 | 26-05-2026 | Repo setup, README, project structure, `.gitignore`, `.env.example` |  Done |
+| Day 2 | 27-05-2026 | MongoDB schemas (Problem, Solution, TestCase, User) |  Done |
+| Day 3 | 28-05-2026 | Express server setup, MongoDB Atlas connection |  Done |
+| Day 4 | 28-05-2026 | Auth system — register, login, logout, JWT httpOnly cookie |  Done |
+| Day 5 | 29-05-2026 | Problem CRUD + TestCase routes with JWT protection |  Done |
+| Day 6 | 30-05-2026 | Submission pipeline + Leaderboard controller |  Done |
+| Day 7 | 30-06-2026 | Docker GCC container + full submission pipeline tested |  Done |
+| Day 8 | — | React frontend — routing, pages scaffold |  |
+| Day 9 | — | Connect frontend to backend (problem list, problem page) |  |
+| Day 10 | — | Submission UI + verdict display |  |
+| Day 11 | — | Leaderboard page |  |
+| Day 12 | — | Profile page + submission history |  |
+| Day 13 | — | Testing, bug fixes, edge cases |  |
+| Day 14 | — | Final cleanup, documentation, demo |  |
  
 > This log is updated daily with actual progress and commits.
  
