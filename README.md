@@ -203,7 +203,7 @@ This refactor replaces that approach with a safer model: **one temporary directo
 
 ## 🐳 Docker Isolation Model
 
-### ❌ Old Model: Shared Persistent Container
+###  Old Model: Shared Persistent Container
 
 ```text
 Submission A ─┐
@@ -212,7 +212,7 @@ Submission C ─┘        │
                        └── shared /tmp, shared process namespace, shared lifecycle
 ```
 
-### ✅ New Model: Per-Submission Ephemeral Containers
+###  New Model: Per-Submission Ephemeral Containers
 
 ```text
 Submission A ─────────► Container A ─────────► removed
