@@ -1,120 +1,119 @@
-# ⚖️ Online Judge — MERN + Ephemeral Docker Sandbox
 
+# ⚖️ Online Judge
+ 
 <p align="center">
-  <strong>A full-stack online judge for coding practice, secure C++ submission execution, problem management, leaderboards, and authenticated user workflows.</strong>
+  <strong>A full-stack competitive programming platform built with the MERN stack — featuring ephemeral Docker sandboxing, JWT authentication, and an automated C++17 judging pipeline.</strong>
 </p>
-
 <p align="center">
   <img alt="Stack" src="https://img.shields.io/badge/Stack-MERN-47A248?style=for-the-badge" />
   <img alt="Runtime" src="https://img.shields.io/badge/Runtime-Node.js-339933?style=for-the-badge" />
   <img alt="Sandbox" src="https://img.shields.io/badge/Sandbox-Ephemeral%20Docker-2496ED?style=for-the-badge" />
   <img alt="Database" src="https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge" />
+  <img alt="Auth" src="https://img.shields.io/badge/Auth-JWT-000000?style=for-the-badge" />
 </p>
-
 ---
-
+ 
 ## 📌 Overview
-
-Online Judge is a MERN-stack platform where users can register, browse programming problems, submit C++ solutions, receive automated verdicts, and review leaderboard activity. The backend now uses **per-submission ephemeral Docker containers** instead of a shared long-running container, giving every submission its own isolated workspace and runtime boundary.
-
-The judge currently supports C++17 submissions and returns standard competitive-programming verdicts:
-
-| Verdict | Meaning |
+ 
+Online Judge is a MERN-stack platform where users register, browse programming problems, submit C++ solutions, receive automated verdicts, and track their performance on a leaderboard. The backend uses **per-submission ephemeral Docker containers** — every submission gets its own isolated workspace, network-disabled runtime, and automatic cleanup.
+ 
+### Supported Verdicts
+ 
+| Code | Meaning |
 |---|---|
 | `AC` | Accepted |
 | `WA` | Wrong Answer |
 | `TLE` | Time Limit Exceeded |
 | `RE` | Runtime Error |
 | `CE` | Compilation Error |
-
+| `SE` | System Error |
+ 
 ---
-
-## 🎯 Motivation
-
-Online judges execute untrusted code. A shared execution container such as `oj-gcc` is convenient for demos, but it creates serious production risks:
-
-- Submissions can share filesystem state.
-- One malicious or buggy program can affect later submissions.
-- Concurrent submissions can collide on filenames.
-- Cleanup is fragile because the container persists across requests.
-- Isolation boundaries are too weak for a real judge.
-
-This refactor replaces that approach with a safer model: **one temporary directory and one temporary Docker container per submission test run**. Containers are removed immediately after execution, networking is disabled, CPU and memory are limited, and temporary host files are deleted in `finally` cleanup blocks.
-
+ 
+## 🎯 Why Ephemeral Containers
+ 
+Online judges execute untrusted user code. A shared persistent container creates serious risks:
+ 
+- Submissions share filesystem state — one run can affect the next
+- Concurrent submissions collide on filenames
+- A buggy or malicious program can corrupt the shared environment
+- Cleanup is fragile when the container persists across requests
+This project uses a safer model: **one temporary directory and one Docker container per submission**. Containers are removed immediately after execution. Networking is disabled. CPU, memory, and PID limits are enforced. Temp files are deleted in `finally` blocks.
+ 
 ---
-
+ 
 ## ✨ Features
-
-###  Current Features
-
+ 
+### Current
+ 
 | Area | Capability |
 |---|---|
-| Authentication | Register, login, logout with bcrypt password hashing and JWT cookies |
-| Problem API | Create, update, delete, list, and fetch problems |
-| Test Cases | Add, fetch, and delete problem test cases |
-| Judging | Compile and execute C++17 submissions in isolated Docker containers |
-| Verdicts | `AC`, `WA`, `TLE`, `RE`, `CE` |
-| Leaderboard | Displays recent submissions with user and problem metadata |
-| Profile | Authenticated user profile with recent submissions |
-| Security | httpOnly cookies, no-network Docker runs, CPU/memory limits, PID limit, read-only root filesystem |
-
-### 🚧 Planned Features
-
-| Feature | Why it matters |
+| Authentication | Register, login, logout with bcrypt + JWT httpOnly cookies |
+| Problems | Create, update, delete, list, and fetch problems |
+| Test Cases | Add, fetch, and delete test cases per problem |
+| Judging | C++17 compilation and execution in isolated ephemeral Docker containers |
+| Verdicts | `AC`, `WA`, `TLE`, `RE`, `CE`, `SE` |
+| Leaderboard | Ranked by accepted submissions with user and problem metadata |
+| Profile | Authenticated user profile with submission history and verdict stats |
+| Security | httpOnly cookies, no-network Docker, CPU/memory/PID limits, read-only rootfs |
+ 
+### Planned
+ 
+| Feature | Purpose |
 |---|---|
-| Redis Queue | Buffer burst traffic and decouple API requests from judge workers |
-| BullMQ Workers | Process submissions reliably with retries and concurrency control |
-| WebSockets | Stream live verdict updates to users |
-| Contest Support | Timed contests, scoreboards, freeze windows, and problem sets |
-| Rating System | Elo-style or Codeforces-style rating progression |
-| Admin Dashboard | Safer problem/testcase management for maintainers |
-| Multi-language Support | Add Python, Java, JavaScript, and language-specific limits |
-| Kubernetes Workers | Horizontally scale isolated judge workers in production |
-
+| Redis + BullMQ | Async submission queue — decouple API from judge workers |
+| WebSockets | Stream live verdict updates instead of polling |
+| Contest Mode | Timed contests, scoreboards, freeze windows |
+| Rating System | Codeforces-style rating progression |
+| Admin Dashboard | Role-based problem and test case management |
+| Multi-language | Python, Java, JavaScript support with per-language limits |
+| Kubernetes Workers | Horizontally scalable judge nodes |
+ 
 ---
-
+ 
 ## 🏗️ Architecture
-
-### Current Application Architecture
-
-```text
-┌──────────────┐
-│    React     │
-│  Frontend    │
-└──────┬───────┘
-       │ HTTP + Cookies
-       ▼
-┌──────────────┐
-│   Express    │
-│     API      │
-└──────┬───────┘
-       │ Mongoose
-       ▼
-┌──────────────┐
-│   MongoDB    │
-│  Database    │
-└──────────────┘
-
-          ┌──────────────────────────┐
-          │      Docker Judge        │
-          │ Ephemeral C++ Containers │
-          └──────────────────────────┘
+ 
+### Current
+ 
 ```
-
-### Production Target Architecture
-
-```text
 ┌──────────────┐
 │    React     │
 │  Frontend    │
+└──────┬───────┘
+       │ HTTP + Cookies (Axios)
+       ▼
+┌──────────────────────────────┐
+│       Express.js API         │
+│                              │
+│  cors → json → cookieParser  │
+│  verifyToken (JWT middleware) │
+│  Routes → Controllers        │
+└──────┬───────────────┬───────┘
+       │               │
+       ▼               ▼
+┌──────────────┐  ┌──────────────────────────┐
+│   MongoDB    │  │      Docker Judge         │
+│   Atlas      │  │  Ephemeral C++ Containers │
+│              │  │                           │
+│  users       │  │  unique workdir per run   │
+│  problems    │  │  g++ -std=c++17 compile   │
+│  solutions   │  │  2s execution timeout     │
+│  test_cases  │  │  --rm auto cleanup        │
+└──────────────┘  └──────────────────────────┘
+```
+ 
+### Production Target
+ 
+```
+┌──────────────┐
+│    React     │
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
-│     API      │
-│   Express    │
+│  Express API │
 └──────┬───────┘
-       │ enqueue submission
+       │ enqueue
        ▼
 ┌──────────────┐
 │ Redis Queue  │
@@ -133,611 +132,422 @@ This refactor replaces that approach with a safer model: **one temporary directo
 │  C++ / Python / Java │
 └──────────────────────┘
 ```
-
+ 
 ---
-
-## 🔄 Submission Flow
-
-```text
-┌────────┐
-│  User  │
-└───┬────┘
-    │
-    ▼
-┌──────────────┐
-│ Submit Code  │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ Auth Cookie  │
-│ JWT Verify   │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ Fetch Tests  │
-│ from MongoDB │
-└──────┬───────┘
-       │
-       ▼
-┌────────────────────┐
-│ Container Creation │
-│ --network none     │
-│ --memory=128m      │
-│ --cpus=1           │
-└──────┬─────────────┘
-       │
-       ▼
-┌──────────────┐
-│ Compile C++  │
-│ g++ C++17    │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ Execute Code │
-│ 2s Timeout   │
-└──────┬───────┘
-       │
-       ▼
-┌────────────────┐
-│ Compare Output │
-└──────┬─────────┘
-       │
-       ▼
-┌──────────────┐
-│   Verdict    │
-│ AC/WA/TLE/RE │
-│      /CE     │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│  Database    │
-│ Save Solution│
-└──────────────┘
+ 
+## 🔄 Submission Pipeline
+ 
 ```
-
+User submits C++ code
+        │
+        ▼
+POST /api/submit  →  verifyToken (JWT cookie)
+        │
+        ├─ Validate request body (problemId, code)
+        ├─ Problem.findById() → 404 if not found
+        ├─ TestCase.find({ problem }) → 400 if empty
+        │
+        ├─ For each test case:
+        │     │
+        │     ├─ mkdtemp() → unique temp directory
+        │     ├─ Write source.cpp + input.txt
+        │     │
+        │     ├─ docker run --rm --network none --memory 128m
+        │     │            --cpus 1 --pids-limit 64
+        │     │            --read-only --cap-drop ALL
+        │     │
+        │     ├─ g++ -std=c++17 -O2 source.cpp → compile.stderr
+        │     │     └─ exit 100 → CE → break
+        │     │
+        │     ├─ timeout 2s ./solution < input.txt
+        │     │     ├─ exit 124/137 → TLE → break
+        │     │     └─ non-zero exit → RE → break
+        │     │
+        │     ├─ normalizeOutput(stdout) vs normalizeOutput(expected)
+        │     │     └─ mismatch → WA → break
+        │     │
+        │     └─ finally: rm container + rm workdir
+        │
+        ├─ All passed → AC
+        ├─ Solution.create({ problem, user, verdict })
+        └─ Return { verdict, verdictLabel, solutionId }
+```
+ 
 ---
-
+ 
+## ⚡ Async Queue — Handling Concurrent Submissions
+ 
+At scale, running Docker executions synchronously inside API requests overwhelms the server. The solution is a **message queue**:
+ 
+```
+1000 users submit simultaneously
+        │
+        ▼
+All submissions enter a FIFO queue
+        │
+        ▼
+Fixed worker pool processes jobs one by one
+        │
+        ▼
+Verdict saved → user sees "pending" → result appears
+```
+ 
+This is how Codeforces works — you see **"In Queue"** before getting a verdict. The queue decouples incoming load from the execution system.
+ 
+**Current:** Synchronous per request — sufficient for development and low traffic.  
+**Production:** Bull + Redis queue with configurable worker concurrency.
+ 
+---
+ 
 ## 🐳 Docker Isolation Model
-
-###  Old Model: Shared Persistent Container
-
-```text
+ 
+### Old: Shared Persistent Container
+ 
+```
 Submission A ─┐
-Submission B ─┼──► one shared container: oj-gcc
-Submission C ─┘        │
-                       └── shared /tmp, shared process namespace, shared lifecycle
+Submission B ─┼──► oj-gcc (shared forever)
+Submission C ─┘    └── shared /tmp, shared process space
 ```
-
-###  New Model: Per-Submission Ephemeral Containers
-
-```text
-Submission A ─────────► Container A ─────────► removed
-Submission B ─────────► Container B ─────────► removed
-Submission C ─────────► Container C ─────────► removed
-
-Each run gets:
-  • unique random temp directory
-  • unique Docker container name
-  • mounted workspace only
-  • disabled network
-  • memory / CPU / PID limits
-  • automatic cleanup
+ 
+### New: Per-Submission Ephemeral Containers
+ 
 ```
-
+Submission A ──► Container A (uuid) ──► removed automatically
+Submission B ──► Container B (uuid) ──► removed automatically
+Submission C ──► Container C (uuid) ──► removed automatically
+```
+ 
 ### Docker Runtime Controls
-
-The executor runs Docker with the following production-oriented restrictions:
-
-| Control | Purpose |
+ 
+| Flag | Purpose |
 |---|---|
-| `--rm` | Remove the container after the run exits |
-| `--network none` | Prevent internet and service discovery access |
-| `--memory=128m` | Limit memory usage per submission |
-| `--cpus=1` | Limit CPU allocation per submission |
-| `--pids-limit=64` | Limit fork/process explosion |
-| `--read-only` | Keep the container root filesystem immutable |
-| `--tmpfs /tmp` | Provide a small temporary compiler workspace |
-| `--security-opt no-new-privileges` | Prevent privilege escalation |
-| `--cap-drop ALL` | Drop Linux capabilities not needed for compilation/execution |
-| bind mount `/judge` only | Expose only the submission workspace to the container |
-
+| `--rm` | Auto-remove container after exit |
+| `--network none` | No internet or service access |
+| `--memory=128m` | Memory cap per submission |
+| `--cpus=1` | CPU cap per submission |
+| `--pids-limit=64` | Prevents fork bombs |
+| `--read-only` | Immutable root filesystem |
+| `--tmpfs /tmp` | Small writable scratch space for compiler |
+| `--security-opt no-new-privileges` | No privilege escalation |
+| `--cap-drop ALL` | Drop all Linux capabilities |
+| bind mount `/judge` only | Container sees only submission workspace |
+ 
 ---
-
-## 🧰 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React |
-| Backend | Node.js, Express.js |
-| Database | MongoDB, Mongoose |
-| Auth | bcryptjs, JWT, httpOnly cookies |
-| Sandbox | Docker, GCC C++17 image |
-| Runtime | Node.js async/await |
-
+ 
+## 🔐 Auth Flow
+ 
+```
+Register:
+  POST /api/auth/register
+    → collectMissingFields() validation
+    → User.findOne({ email }) → 409 if duplicate
+    → bcrypt.genSalt(10) + bcrypt.hash(password)
+    → User.create(...)
+    → jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+    → res.cookie('token', jwt, { httpOnly: true, sameSite: 'lax' })
+ 
+Login:
+  POST /api/auth/login
+    → User.findOne({ email })
+    → bcrypt.compare(password, user.password)
+    → identical "Invalid credentials" for both failures (prevents user enumeration)
+    → jwt.sign(...) → res.cookie(...)
+ 
+Protected Routes:
+  verifyToken middleware
+    → req.cookies.token
+    → jwt.verify(token, JWT_SECRET)
+    → req.user = decoded → next()
+    → invalid/missing → 401
+```
+ 
+**Why httpOnly Cookie over localStorage:**
+`localStorage` is readable by any JavaScript — XSS steals the token. `httpOnly` cookies are invisible to JavaScript — browsers send them automatically, attackers cannot read them.
+ 
 ---
-
+ 
+## 🗃️ Database Schema
+ 
+### users
+```js
+{
+  fullName:    String,   // required
+  email:       String,   // required, unique
+  password:    String,   // required, bcrypt hash
+  dob:         Date
+}
+```
+ 
+### problems
+```js
+{
+  name:        String,   // required
+  statement:   String,   // required
+  code:        String,   // required, e.g. "P001"
+  difficulty:  String    // 'Easy' | 'Medium' | 'Hard'
+}
+```
+ 
+### test_cases
+```js
+{
+  input:       String,   // required
+  output:      String,   // required
+  problem:     ObjectId  // ref: Problem, required
+}
+```
+ 
+### solutions
+```js
+{
+  problem:      ObjectId, // ref: Problem, required
+  user:         ObjectId, // ref: User, required
+  verdict:      String,   // AC | WA | TLE | RE | CE | SE
+  submitted_at: Date      // default: Date.now
+}
+```
+ 
+### Relationships
+```
+users    1 ──── * solutions
+problems 1 ──── * solutions
+problems 1 ──── * test_cases
+```
+ 
+---
+ 
+## 🔌 API Reference
+ 
+> Base URL: `http://localhost:5000/api`  
+> Protected endpoints require the `token` httpOnly cookie set by `/auth/login`.
+ 
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/register` | No | Register new user |
+| POST | `/auth/login` | No | Login, sets JWT cookie |
+| POST | `/auth/logout` | No | Clears JWT cookie |
+| GET | `/problems` | No | List all problems |
+| GET | `/problems/:id` | No | Get problem by ID |
+| POST | `/problems` | Yes | Create problem |
+| PUT | `/problems/:id` | Yes | Update problem |
+| DELETE | `/problems/:id` | Yes | Delete problem |
+| POST | `/testcases` | Yes | Add test case |
+| GET | `/testcases/:problemId` | No | Get test cases |
+| DELETE | `/testcases/:id` | Yes | Delete test case |
+| POST | `/submit` | Yes | Submit code for judging |
+| GET | `/leaderboard` | No | Get leaderboard |
+| GET | `/profile` | Yes | Get user profile + stats |
+ 
+### POST `/auth/register`
+```json
+// Request
+{ "fullName": "Mayank", "email": "mayank@test.com", "password": "test1234", "dob": "2004-01-01" }
+ 
+// Response 201
+{ "success": true, "message": "User registered successfully", "data": { "user": { "id": "...", "fullName": "Mayank", "email": "mayank@test.com" } } }
+```
+ 
+### POST `/submit`
+```json
+// Request
+{ "problemId": "65f1a5d0e7a1a4d8a51c2222", "code": "#include<iostream>..." }
+ 
+// Response 200 — Accepted
+{ "success": true, "message": "Submission judged", "data": { "verdict": "AC", "verdictLabel": "Accepted", "solutionId": "...", "failedTestCase": null } }
+ 
+// Response 200 — Wrong Answer
+{ "success": true, "message": "Submission judged", "data": { "verdict": "WA", "verdictLabel": "Wrong Answer", "solutionId": "...", "failedTestCase": 1 } }
+ 
+// Response 200 — Compilation Error
+{ "success": true, "message": "Submission judged", "data": { "verdict": "CE", "verdictLabel": "Compilation Error", "solutionId": "...", "error": "source.cpp:1:1: error..." } }
+```
+ 
+---
+ 
 ## 📁 Repository Structure
-
-```text
+ 
+```
 Online-Judge/
-├── client/                         # React frontend placeholder/source tree
+├── client/                          # React frontend
 ├── docker/
-│   └── Dockerfile.gcc              # Optional GCC judge image definition
+│   └── Dockerfile.gcc               # GCC judge image definition
 ├── server/
 │   ├── constants/
-│   │   └── verdicts.js             # Verdict constants and labels
-│   ├── controllers/                # Express controller logic
+│   │   └── verdicts.js              # Verdict codes and labels
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── problemController.js
+│   │   ├── submissionController.js
+│   │   ├── leaderboardController.js
+│   │   ├── testCaseController.js
+│   │   └── profileController.js
 │   ├── executors/
-│   │   ├── docker/dockerCommand.js # Safe Docker process wrapper
-│   │   ├── utils/output.js         # Output normalization helpers
-│   │   └── runCode.js              # Ephemeral Docker execution engine
-│   ├── middleware/                 # JWT auth middleware
-│   ├── models/                     # Mongoose schemas
-│   ├── routes/                     # API routes
-│   ├── index.js                    # Server entry point
-│   ├── package.json
-│   └── package-lock.json
+│   │   ├── docker/
+│   │   │   └── dockerCommand.js     # spawn wrapper for Docker CLI
+│   │   ├── utils/
+│   │   │   └── output.js            # Output normalization
+│   │   └── runCode.js               # Ephemeral container execution engine
+│   ├── middleware/
+│   │   └── auth.js                  # JWT verification middleware
+│   ├── models/
+│   │   ├── User.js
+│   │   ├── Problem.js
+│   │   ├── Solution.js
+│   │   └── TestCase.js
+│   ├── routes/
+│   │   ├── auth.js
+│   │   ├── problems.js
+│   │   ├── submit.js
+│   │   ├── leaderboard.js
+│   │   ├── testCases.js
+│   │   └── profile.js
+│   ├── utils/
+│   │   ├── response.js              # sendSuccess / sendError helpers
+│   │   └── validation.js            # Input validation helpers
+│   └── index.js                     # Server entry point
 ├── .env.example
+├── .gitignore
 └── README.md
 ```
-
+ 
 ---
-
-## 🚀 Getting Started
-
+ 
+## ⚙️ Local Setup
+ 
 ### Prerequisites
-
+ 
 - Node.js 18+
 - npm
-- Docker Engine
-- MongoDB connection string
-
-### 1. Clone the repository
-
+- Docker Desktop
+- MongoDB Atlas account (free tier works)
+### 1. Clone
+ 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Mikey3600/Online-Judge.git
 cd Online-Judge
 ```
-
-### 2. Configure environment variables
-
+ 
+### 2. Configure environment
+ 
 ```bash
+cd server
 cp .env.example .env
 ```
-
-Update `.env`:
-
+ 
+Edit `.env`:
+ 
 ```env
-MONGO_URI=mongodb://localhost:27017/online_judge
-JWT_SECRET=replace_with_a_long_random_secret
+MONGO_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/onlinejudge
+JWT_SECRET=your_long_random_secret_here
 PORT=5000
 CLIENT_ORIGIN=http://localhost:3000
 JUDGE_DOCKER_IMAGE=gcc:13
 JUDGE_DOCKER_TIMEOUT_MS=20000
 ```
-
-### 3. Install backend dependencies
-
+ 
+### 3. Install dependencies
+ 
 ```bash
-cd server
 npm install
 ```
-
-### 4. Pull or build the judge image
-
-Use the upstream GCC image:
-
+ 
+### 4. Pull judge image
+ 
 ```bash
 docker pull gcc:13
 ```
-
-Or build the repository image:
-
+ 
+### 5. Start server
+ 
 ```bash
-docker build -f docker/Dockerfile.gcc -t online-judge-gcc:13 .
-```
-
-If you build the repository image, set:
-
-```env
-JUDGE_DOCKER_IMAGE=online-judge-gcc:13
-```
-
-### 5. Start the API
-
-```bash
-cd server
 npm run dev
 ```
-
-The API will start on `http://localhost:5000` by default.
-
+ 
+API runs at `http://localhost:5000`
+ 
+### 6. Start frontend (Day 8+)
+ 
+```bash
+cd ../client
+npm install
+npm start
+```
+ 
 ---
-
-## 🔌 API Documentation
-
-> Base URL: `http://localhost:5000/api`
->
-> Authenticated endpoints use the `token` httpOnly cookie returned by `/auth/register` or `/auth/login`.
-
-
-| Requested operation | Implemented route | Notes |
-|---|---|---|
-| `POST /register` | `POST /api/auth/register` | Register and set cookie |
-| `POST /login` | `POST /api/auth/login` | Login and set cookie |
-| `GET /problems` | `GET /api/problems` | Public problem list |
-| `GET /problems/:id` | `GET /api/problems/:id` | Public problem detail |
-| `POST /submit` | `POST /api/submit` | Protected submission endpoint |
-| `GET /leaderboard` | `GET /api/leaderboard` | Recent submissions |
-| `GET /profile` | `GET /api/profile` | Protected user profile |
-
-### POST `/auth/register`
-
-Creates a user, hashes the password with bcrypt, signs a JWT, and sets it as an httpOnly cookie.
-
-**Request**
-
-```json
-{
-  "fullName": "Ada Lovelace",
-  "email": "ada@example.com",
-  "password": "StrongPassword123!",
-  "dob": "1815-12-10"
-}
-```
-
-**Response `201`**
-
-```json
-{
-  "message": "User registered successfully",
-  "user": {
-    "id": "65f1a5d0e7a1a4d8a51c1111",
-    "fullName": "Ada Lovelace",
-    "email": "ada@example.com"
-  }
-}
-```
-
-### POST `/auth/login`
-
-Authenticates a user and sets the JWT cookie.
-
-**Request**
-
-```json
-{
-  "email": "ada@example.com",
-  "password": "StrongPassword123!"
-}
-```
-
-**Response `200`**
-
-```json
-{
-  "message": "Login successful",
-  "user": {
-    "id": "65f1a5d0e7a1a4d8a51c1111",
-    "fullName": "Ada Lovelace",
-    "email": "ada@example.com"
-  }
-}
-```
-
-### GET `/problems`
-
-Returns a lightweight list of problems.
-
-**Response `200`**
-
-```json
-[
-  {
-    "_id": "65f1a5d0e7a1a4d8a51c2222",
-    "name": "Two Sum",
-    "code": "TWO-SUM",
-    "difficulty": "Easy"
-  }
-]
-```
-
-### GET `/problems/:id`
-
-Returns one problem by MongoDB ObjectId.
-
-**Response `200`**
-
-```json
-{
-  "_id": "65f1a5d0e7a1a4d8a51c2222",
-  "name": "Two Sum",
-  "statement": "Given two integers, print their sum.",
-  "code": "TWO-SUM",
-  "difficulty": "Easy"
-}
-```
-
-### POST `/submit`
-
-Submits C++ code for judging. This endpoint is protected.
-
-**Request**
-
-```json
-{
-  "problemId": "65f1a5d0e7a1a4d8a51c2222",
-  "code": "#include <iostream>\nusing namespace std;\nint main(){ long long a,b; cin>>a>>b; cout << a+b << '\\n'; }"
-}
-```
-
-**Response `200` — Accepted**
-
-```json
-{
-  "verdict": "AC",
-  "verdictLabel": "Accepted",
-  "solutionId": "65f1a5d0e7a1a4d8a51c3333"
-}
-```
-
-**Response `200` — Compilation Error**
-
-```json
-{
-  "verdict": "CE",
-  "verdictLabel": "Compilation Error",
-  "solutionId": "65f1a5d0e7a1a4d8a51c3334",
-  "error": "source.cpp: In function 'int main()': ..."
-}
-```
-
-### GET `/leaderboard`
-
-Returns the most recent submissions with populated user and problem information.
-
-**Response `200`**
-
-```json
-[
-  {
-    "_id": "65f1a5d0e7a1a4d8a51c3333",
-    "verdict": "AC",
-    "submitted_at": "2026-06-02T10:00:00.000Z",
-    "user": {
-      "fullName": "Ada Lovelace",
-      "email": "ada@example.com"
-    },
-    "problem": {
-      "name": "Two Sum",
-      "code": "TWO-SUM"
-    }
-  }
-]
-```
-
-### GET `/profile`
-
-Returns the authenticated user profile and recent submissions.
-
-**Response `200`**
-
-```json
-{
-  "user": {
-    "_id": "65f1a5d0e7a1a4d8a51c1111",
-    "fullName": "Ada Lovelace",
-    "email": "ada@example.com",
-    "dob": "1815-12-10T00:00:00.000Z"
-  },
-  "recentSubmissions": [
-    {
-      "_id": "65f1a5d0e7a1a4d8a51c3333",
-      "verdict": "AC",
-      "problem": {
-        "name": "Two Sum",
-        "code": "TWO-SUM",
-        "difficulty": "Easy"
-      }
-    }
-  ]
-}
-```
-
----
-
-## 🗃️ Database Schema
-
-### Users
-
-```js
-{
-  fullName: String,          // required
-  email: String,             // required, unique
-  password: String,          // required, bcrypt hash
-  dob: Date                  // optional
-}
-```
-
-### Problems
-
-```js
-{
-  name: String,              // required
-  statement: String,         // required
-  code: String,              // required
-  difficulty: 'Easy' | 'Medium' | 'Hard'
-}
-```
-
-### TestCases
-
-```js
-{
-  input: String,             // required
-  output: String,            // required
-  problem: ObjectId          // ref: Problem, required
-}
-```
-
-### Solutions
-
-```js
-{
-  problem: ObjectId,         // ref: Problem, required
-  user: ObjectId,            // ref: User, required
-  verdict: String,           // AC | WA | TLE | RE | CE | SE
-  submitted_at: Date         // default: Date.now
-}
-```
-
-### Relationships
-
-```text
-Users    1 ──── * Solutions
-Problems 1 ──── * Solutions
-Problems 1 ──── * TestCases
-```
-
----
-
-## 🔐 Security
-
-### Authentication Security
-
+ 
+## 🛡️ Security
+ 
 | Control | Implementation |
 |---|---|
-| Password hashing | bcrypt with generated salt |
-| Session token | JWT signed with `JWT_SECRET` |
-| Cookie transport | `httpOnly` cookie to reduce client-side token exposure |
-| Route protection | `verifyToken` middleware reads and verifies the cookie |
-
-### Execution Security
-
-| Risk | Mitigation |
-|---|---|
-| Network abuse | Docker runs with `--network none` |
-| Host file access | Only the random workspace directory is mounted |
-| Memory abuse | Docker runs with `--memory=128m` |
-| CPU abuse | Docker runs with `--cpus=1` |
-| Fork bombs | Docker runs with `--pids-limit=64` |
-| Persistent contamination | Containers use `--rm`; temp files are removed in `finally` |
-| Root filesystem writes | Docker runs with `--read-only` and small `/tmp` tmpfs |
-| Privilege escalation | `--security-opt no-new-privileges` and `--cap-drop ALL` |
-
-> Important: Docker sandboxing is a major improvement over direct host execution, but high-stakes production judges should add dedicated worker hosts, seccomp/AppArmor profiles, queue isolation, audit logging, and continuous patching.
-
+| Password hashing | bcrypt with salt rounds = 10 |
+| Session token | JWT, expires in 7 days |
+| Cookie transport | `httpOnly` + `sameSite: lax` |
+| User enumeration prevention | Identical error for wrong email and wrong password |
+| Route protection | `verifyToken` middleware on all protected routes |
+| Network isolation | `--network none` per Docker container |
+| Memory isolation | `--memory=128m` per container |
+| CPU isolation | `--cpus=1` per container |
+| Fork bomb prevention | `--pids-limit=64` |
+| Privilege escalation | `--security-opt no-new-privileges` + `--cap-drop ALL` |
+| Filesystem isolation | `--read-only` root + tmpfs for compiler scratch |
+ 
 ---
-
-## 🧪 Judging Semantics
-
-For each test case, the API:
-
-1. Creates a unique temp directory using timestamp + UUID entropy.
-2. Writes `source.cpp` and `input.txt` into that directory.
-3. Starts a new Docker container with strict runtime limits.
-4. Compiles with `g++ -std=c++17 -O2 -pipe`.
-5. Executes with a 2-second timeout.
-6. Captures stdout/stderr.
-7. Normalizes trailing whitespace and compares with expected output.
-8. Returns the first failing verdict or `AC` when every test passes.
-9. Saves the solution record to MongoDB.
-10. Removes the Docker container and temp directory.
-
+ 
+## 📅 Development Log
+ 
+| Day | Date | Task | Status |
+|-----|------|------|--------|
+| Day 1 | 26-05-2026 | Repo setup, README, project structure | ✅ |
+| Day 2 | 27-05-2026 | MongoDB schemas — User, Problem, Solution, TestCase | ✅ |
+| Day 3 | 28-05-2026 | Express server + MongoDB Atlas connection | ✅ |
+| Day 4 | 28-05-2026 | Auth — register, login, logout, JWT httpOnly cookie | ✅ |
+| Day 5 | 29-05-2026 | Problem CRUD + TestCase routes with JWT protection | ✅ |
+| Day 6 | 30-05-2026 | Submission pipeline + Leaderboard controller | ✅ |
+| Day 7 | 30-06-2026 | Ephemeral Docker containers + full pipeline tested | ✅ |
+| Day 8 | — | React frontend — routing, pages scaffold | 🔲 |
+| Day 9 | — | Connect frontend to backend | 🔲 |
+| Day 10 | — | Submission UI + verdict display | 🔲 |
+| Day 11 | — | Leaderboard page | 🔲 |
+| Day 12 | — | Profile page + submission history | 🔲 |
+| Day 13 | — | Testing, bug fixes, edge cases | 🔲 |
+| Day 14 | — | Deployment, final cleanup, demo | 🔲 |
+ 
 ---
-
-## 🧭 Migration Notes
-
-If you previously used a persistent container named `oj-gcc`, remove that workflow.
-
-### Remove old shared-container assumptions
-
-Do not start or rely on:
-
-```bash
-docker run --name oj-gcc ...
-docker cp ... oj-gcc:/tmp/...
-docker exec oj-gcc ...
-```
-
-### Use image-based execution instead
-
-The server now expects only a Docker image name:
-
-```env
-JUDGE_DOCKER_IMAGE=gcc:13
-```
-
-Each submission run creates and removes its own container automatically.
-
-### Verdict format change
-
-Verdicts are now stored as short codes:
-
-| Previous style | New code |
-|---|---|
-| Accepted | `AC` |
-| Wrong Answer | `WA` |
-| Time Limit Exceeded | `TLE` |
-| Runtime Error | `RE` |
-| Compilation Error | `CE` |
-
-If your frontend displays long labels, use the `verdictLabel` field returned by `/submit` or map codes client-side.
-
----
-
+ 
 ## ⚠️ Known Limitations
-
-### Current State
-
-- C++17 is the only supported language.
-- Submissions are judged synchronously inside the API request lifecycle.
-- There is no Redis/BullMQ queue yet.
-- Test cases are simple input/output pairs without hidden/visible grouping.
-- There is no admin role model yet; protected problem routes only require authentication.
-- The React client directory is present, but this repository snapshot focuses primarily on the backend API and judge architecture.
-
-### Production Improvements Needed
-
-- Move judging into isolated worker processes or dedicated worker machines.
-- Add a queue to protect the API from burst submission load.
-- Add per-language compile and execution limits.
-- Add stronger Linux sandbox profiles such as seccomp and AppArmor.
-- Add structured logging, metrics, tracing, and alerting.
-- Store source code and per-test execution metadata for auditability.
-- Add CI tests for controllers, auth, model validation, and executor behavior.
-
-### Future Work
-
-- Redis Queue
-- BullMQ
-- WebSockets
-- Contest Support
-- Rating System
-- Admin Dashboard
-- Multi-language Support
-- Kubernetes Workers
-
+ 
+- C++17 only — no Python, Java, or other languages yet
+- Submissions judged synchronously — no queue yet
+- No admin role — any authenticated user can create/edit problems
+- No hidden test cases or test case grouping
+- No source code storage per submission
 ---
-
-## 🤝 Contributing
-
-Contributions are welcome. Suggested contribution areas:
-
-- Add unit and integration tests.
-- Implement BullMQ-backed asynchronous judging.
-- Add frontend pages for profile and submission history.
-- Add multi-language execution profiles.
-- Improve security hardening with seccomp/AppArmor.
-
-Before opening a pull request, run backend syntax checks and ensure Docker is available for executor testing.
-
+ 
+## 🚀 Future Scope
+ 
+- **Contests** — timed competitions with scoreboards and freeze windows
+- **Plagiarism Detection** — MOSS integration for similarity checks
+- **Rating System** — Codeforces-style rating progression
+- **Custom Test Cases** — users can test against their own inputs before submitting
+- **Discussions** — per-problem editorial and comment threads
+- **Multi-language** — Python, Java, JavaScript with per-language time/memory limits
+- **Redis + BullMQ** — async submission queue for production scale
+- **Kubernetes** — horizontally scalable judge worker nodes
 ---
-
-## 📄 License
-
-This project currently uses the ISC license declared in the backend package metadata.
+ 
+## 📚 References
+ 
+- [Docker GCC Image](https://hub.docker.com/_/gcc)
+- [Docker Security — Cap Drop](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities)
+- [isolate — IOI Sandbox](https://github.com/ioi/isolate)
+- [Node child_process docs](https://nodejs.org/api/child_process.html)
+- [Mongoose Docs](https://mongoosejs.com/docs/)
+- [BullMQ](https://docs.bullmq.io/)
+---
+ 
+## 👤 Author
+ 
+**Mayank** — CS Undergraduate, KIIT  
+GitHub: [@Mikey3600](https://github.com/Mikey3600)
+ 
+---
