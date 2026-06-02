@@ -1,66 +1,109 @@
-const { exec } = require('child_process');
-const fs = require('fs');
+const fs = require('fs/promises');
+const os = require('os');
 const path = require('path');
+const { randomUUID } = require('crypto');
+const { runDockerCommand } = require('./docker/dockerCommand');
+const { VERDICTS } = require('../constants/verdicts');
 
-const runCode = (code, input) => {
-    return new Promise((resolve, reject) => {
-        const timestamp = Date.now();
-        const tempDir = path.join(__dirname, 'temp');
+const DEFAULT_IMAGE = 'gcc:13';
+const EXECUTION_TIMEOUT_SECONDS = 2;
+const DOCKER_TIMEOUT_MS = 20000;
 
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir);
-        }
+const buildDockerRunArgs = (containerName, workDir, image) => [
+    'run',
+    '--rm',
+    '--name', containerName,
+    '--network', 'none',
+    '--memory', '128m',
+    '--cpus', '1',
+    '--pids-limit', '64',
+    '--read-only',
+    '--tmpfs', '/tmp:rw,nosuid,nodev,size=16m',
+    '--security-opt', 'no-new-privileges',
+    '--cap-drop', 'ALL',
+    '--mount', `type=bind,source=${workDir},target=/judge,readonly=false`,
+    '--workdir', '/judge',
+    image,
+    'sh',
+    '-lc',
+    [
+        'set -u',
+        'export TMPDIR=/tmp',
+        'g++ -std=c++17 -O2 -pipe source.cpp -o solution 2> compile.stderr',
+        'compile_status=$?',
+        'if [ "$compile_status" -ne 0 ]; then cat compile.stderr >&2; exit 100; fi',
+        `timeout --kill-after=1s ${EXECUTION_TIMEOUT_SECONDS}s ./solution < input.txt`
+    ].join('\n')
+];
 
-        const codePath = path.join(tempDir, `solution_${timestamp}.cpp`);
-        const inputPath = path.join(tempDir, `input_${timestamp}.txt`);
-
-        fs.writeFileSync(codePath, code);
-        fs.writeFileSync(inputPath, input);
-
-        // Copy files into container
-        exec(`docker cp ${codePath} oj-gcc:/tmp/solution_${timestamp}.cpp`, (err) => {
-            if (err) return resolve({ verdict: 'System Error', output: err.message });
-
-            exec(`docker cp ${inputPath} oj-gcc:/tmp/input_${timestamp}.txt`, (err) => {
-                if (err) return resolve({ verdict: 'System Error', output: err.message });
-
-                // Compile inside container
-                exec(
-                    `docker exec oj-gcc g++ /tmp/solution_${timestamp}.cpp -o /tmp/solution_${timestamp}`,
-                    (compileErr, _, compileStderr) => {
-                        if (compileErr) {
-                            cleanup(codePath, inputPath);
-                            return resolve({ verdict: 'Compilation Error', output: compileStderr });
-                        }
-
-                        // Run inside container with timeout
-                        exec(
-                            `docker exec oj-gcc sh -c "/tmp/solution_${timestamp} < /tmp/input_${timestamp}.txt"`,
-                            { timeout: 2000 },
-                            (runErr, stdout, stderr) => {
-                                cleanup(codePath, inputPath);
-
-                                if (runErr && runErr.killed) {
-                                    return resolve({ verdict: 'Time Limit Exceeded', output: '' });
-                                }
-                                if (runErr) {
-                                    return resolve({ verdict: 'Runtime Error', output: stderr });
-                                }
-
-                                resolve({ verdict: 'Success', output: stdout.trim() });
-                            }
-                        );
-                    }
-                );
-            });
-        });
-    });
+const removeContainer = async (containerName) => {
+    await runDockerCommand(['rm', '-f', containerName], { timeoutMs: 5000 });
 };
 
-const cleanup = (...files) => {
-    files.forEach(f => {
-        if (fs.existsSync(f)) fs.unlinkSync(f);
-    });
+const runCode = async (code, input = '') => {
+    const submissionId = randomUUID();
+    const workDir = await fs.mkdtemp(path.join(os.tmpdir(), `oj-${Date.now()}-${submissionId}-`));
+    const containerName = `oj-run-${submissionId}`;
+    const image = process.env.JUDGE_DOCKER_IMAGE || DEFAULT_IMAGE;
+    const dockerTimeoutMs = Number(process.env.JUDGE_DOCKER_TIMEOUT_MS || DOCKER_TIMEOUT_MS);
+
+    try {
+        await fs.chmod(workDir, 0o777);
+        await fs.writeFile(path.join(workDir, 'source.cpp'), code, 'utf8');
+        await fs.writeFile(path.join(workDir, 'input.txt'), input, 'utf8');
+
+        const result = await runDockerCommand(
+            buildDockerRunArgs(containerName, workDir, image),
+            { timeoutMs: dockerTimeoutMs }
+        );
+
+        if (result.timedOut) {
+            return {
+                verdict: VERDICTS.TIME_LIMIT_EXCEEDED,
+                output: result.stdout,
+                error: 'Execution exceeded the host-side Docker timeout.'
+            };
+        }
+
+        if (result.code === 100) {
+            return {
+                verdict: VERDICTS.COMPILATION_ERROR,
+                output: '',
+                error: result.stderr.trim()
+            };
+        }
+
+        if (result.code === 124 || result.code === 137) {
+            return {
+                verdict: VERDICTS.TIME_LIMIT_EXCEEDED,
+                output: result.stdout,
+                error: result.stderr.trim()
+            };
+        }
+
+        if (result.code !== 0) {
+            return {
+                verdict: VERDICTS.RUNTIME_ERROR,
+                output: result.stdout,
+                error: result.stderr.trim()
+            };
+        }
+
+        return {
+            verdict: VERDICTS.ACCEPTED,
+            output: result.stdout,
+            error: result.stderr.trim()
+        };
+    } catch (error) {
+        return {
+            verdict: VERDICTS.SYSTEM_ERROR,
+            output: '',
+            error: error.message
+        };
+    } finally {
+        await removeContainer(containerName);
+        await fs.rm(workDir, { recursive: true, force: true });
+    }
 };
 
 module.exports = runCode;

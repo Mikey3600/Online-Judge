@@ -10,9 +10,11 @@ const problemRoutes = require('./routes/problems');
 const testCaseRoutes = require('./routes/testCases');
 const leaderboardRoutes = require('./routes/leaderboard');
 const solutionRoutes = require('./routes/solutions');
+const profileRoutes = require('./routes/profile');
+const submitRoutes = require('./routes/submit');
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -21,7 +23,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
 app.use('/api/testcases', testCaseRoutes);
 app.use('/api/solutions', solutionRoutes);
+app.use('/api/submit', submitRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/profile', profileRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Online Judge API is running' });
