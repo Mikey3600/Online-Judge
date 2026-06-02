@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "audit": "node scripts/audit-backend.js",
+    "test": "node tests/backend-audit.test.js"
   },
   "keywords": [],
   "author": "",

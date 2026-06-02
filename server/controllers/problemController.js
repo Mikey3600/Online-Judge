@@ -1,72 +1,118 @@
 const Problem = require('../models/Problem');
+const TestCase = require('../models/TestCase');
+const { sendSuccess, sendError } = require('../utils/response');
+const { collectMissingFields, isValidObjectId, normalizeString } = require('../utils/validation');
 
-// GET all problems
+const VALID_DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
+
+const buildProblemPayload = (body, partial = false) => {
+    const payload = {};
+
+    ['name', 'statement', 'code', 'difficulty'].forEach((field) => {
+        if (body[field] !== undefined) {
+            payload[field] = field === 'code' ? normalizeString(body[field]).toUpperCase() : normalizeString(body[field]);
+        }
+    });
+
+    if (!partial) {
+        const missing = collectMissingFields(payload, ['name', 'statement', 'code']);
+        if (missing.length > 0) return { error: { message: 'Missing required fields', details: { fields: missing } } };
+    }
+
+    if (payload.difficulty && !VALID_DIFFICULTIES.includes(payload.difficulty)) {
+        return { error: { message: 'Invalid difficulty', details: { allowed: VALID_DIFFICULTIES } } };
+    }
+
+    return { payload };
+};
+
 const getAllProblems = async (req, res) => {
     try {
-        const problems = await Problem.find({}, 'name code difficulty');
-        res.status(200).json(problems);
+        const problems = await Problem.find({}, 'name code difficulty').sort({ code: 1 });
+        return sendSuccess(res, 200, 'Problems fetched successfully', { problems });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 
-// GET single problem by ID
 const getProblemById = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return sendError(res, 400, 'Invalid problem id');
+        }
+
         const problem = await Problem.findById(req.params.id);
         if (!problem) {
-            return res.status(404).json({ message: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
-        res.status(200).json(problem);
+        return sendSuccess(res, 200, 'Problem fetched successfully', { problem });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 
-// POST create problem (admin only)
 const createProblem = async (req, res) => {
     try {
-        const { name, statement, code, difficulty } = req.body;
+        const { payload, error } = buildProblemPayload(req.body);
+        if (error) return sendError(res, 400, error.message, error.details);
 
-        const existing = await Problem.findOne({ code });
+        const existing = await Problem.findOne({ code: payload.code });
         if (existing) {
-            return res.status(400).json({ message: 'Problem code already exists' });
+            return sendError(res, 409, 'Problem code already exists');
         }
 
-        const problem = await Problem.create({ name, statement, code, difficulty });
-        res.status(201).json({ message: 'Problem created', problem });
+        const problem = await Problem.create(payload);
+        return sendSuccess(res, 201, 'Problem created', { problem });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 
-// PUT update problem
 const updateProblem = async (req, res) => {
     try {
-        const problem = await Problem.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }   // returns updated document
-        );
-        if (!problem) {
-            return res.status(404).json({ message: 'Problem not found' });
+        if (!isValidObjectId(req.params.id)) {
+            return sendError(res, 400, 'Invalid problem id');
         }
-        res.status(200).json({ message: 'Problem updated', problem });
+
+        const { payload, error } = buildProblemPayload(req.body, true);
+        if (error) return sendError(res, 400, error.message, error.details);
+        if (Object.keys(payload).length === 0) {
+            return sendError(res, 400, 'No valid fields supplied for update');
+        }
+
+        if (payload.code) {
+            const duplicate = await Problem.findOne({ code: payload.code, _id: { $ne: req.params.id } });
+            if (duplicate) return sendError(res, 409, 'Problem code already exists');
+        }
+
+        const problem = await Problem.findByIdAndUpdate(req.params.id, payload, {
+            new: true,
+            runValidators: true
+        });
+        if (!problem) {
+            return sendError(res, 404, 'Problem not found');
+        }
+        return sendSuccess(res, 200, 'Problem updated', { problem });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 
-// DELETE problem
 const deleteProblem = async (req, res) => {
     try {
+        if (!isValidObjectId(req.params.id)) {
+            return sendError(res, 400, 'Invalid problem id');
+        }
+
         const problem = await Problem.findByIdAndDelete(req.params.id);
         if (!problem) {
-            return res.status(404).json({ message: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
-        res.status(200).json({ message: 'Problem deleted' });
+
+        await TestCase.deleteMany({ problem: problem._id });
+        return sendSuccess(res, 200, 'Problem deleted');
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 

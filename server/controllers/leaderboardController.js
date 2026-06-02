@@ -1,16 +1,36 @@
 const Solution = require('../models/Solution');
+const { VERDICTS } = require('../constants/verdicts');
+const { sendSuccess, sendError } = require('../utils/response');
 
 const getLeaderboard = async (req, res) => {
     try {
-        const solutions = await Solution.find()
-            .sort({ submitted_at: -1 })    // newest first
-            .limit(10)                      // last 10 only
-            .populate('user', 'fullName email')    // get user details
-            .populate('problem', 'name code');     // get problem details
+        const leaderboard = await Solution.aggregate([
+            { $match: { verdict: VERDICTS.ACCEPTED } },
+            {
+                $group: {
+                    _id: '$user',
+                    acceptedSubmissions: { $sum: 1 },
+                    solvedProblems: { $addToSet: '$problem' },
+                    lastAcceptedAt: { $max: '$submitted_at' }
+                }
+            },
+            {
+                $project: {
+                    user: '$_id',
+                    _id: 0,
+                    acceptedSubmissions: 1,
+                    solvedCount: { $size: '$solvedProblems' },
+                    lastAcceptedAt: 1
+                }
+            },
+            { $sort: { solvedCount: -1, acceptedSubmissions: -1, lastAcceptedAt: 1 } },
+            { $limit: 10 }
+        ]);
 
-        res.status(200).json(solutions);
+        await Solution.populate(leaderboard, { path: 'user', select: 'fullName email' });
+        return sendSuccess(res, 200, 'Leaderboard fetched successfully', { leaderboard });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 

@@ -1,0 +1,95 @@
+{
+  "info": {
+    "name": "Online Judge Backend Audit Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "problemId", "value": "000000000000000000000000" },
+    { "key": "testCaseId", "value": "000000000000000000000000" }
+  ],
+  "item": [
+    { "name": "Root", "request": { "method": "GET", "url": "{{baseUrl}}/" } },
+    { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/api/health" } },
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": { "mode": "raw", "raw": "{\"fullName\":\"Ada Lovelace\",\"email\":\"ada@example.com\",\"password\":\"secret123\",\"dob\":\"1815-12-10\"}" }
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\":\"ada@example.com\",\"password\":\"secret123\"}" }
+      }
+    },
+    { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/logout" } },
+    { "name": "List Problems", "request": { "method": "GET", "url": "{{baseUrl}}/api/problems" } },
+    { "name": "Get Problem", "request": { "method": "GET", "url": "{{baseUrl}}/api/problems/{{problemId}}" } },
+    {
+      "name": "Create Problem",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/problems",
+        "body": { "mode": "raw", "raw": "{\"name\":\"A + B\",\"statement\":\"Read two integers and print their sum.\",\"code\":\"A_PLUS_B\",\"difficulty\":\"Easy\"}" }
+      }
+    },
+    {
+      "name": "Update Problem",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/problems/{{problemId}}",
+        "body": { "mode": "raw", "raw": "{\"difficulty\":\"Medium\"}" }
+      }
+    },
+    { "name": "Delete Problem", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/problems/{{problemId}}" } },
+    {
+      "name": "Add Test Case",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/testcases",
+        "body": { "mode": "raw", "raw": "{\"problemId\":\"{{problemId}}\",\"input\":\"1 2\\n\",\"output\":\"3\\n\"}" }
+      }
+    },
+    { "name": "Get Test Cases", "request": { "method": "GET", "url": "{{baseUrl}}/api/testcases/{{problemId}}" } },
+    {
+      "name": "Update Test Case",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/testcases/{{testCaseId}}",
+        "body": { "mode": "raw", "raw": "{\"input\":\"2 2\\n\",\"output\":\"4\\n\"}" }
+      }
+    },
+    { "name": "Delete Test Case", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/testcases/{{testCaseId}}" } },
+    {
+      "name": "Submit Code",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/submit",
+        "body": { "mode": "raw", "raw": "{\"problemId\":\"{{problemId}}\",\"code\":\"#include <bits/stdc++.h>\\nusing namespace std;\\nint main(){ long long a,b; cin>>a>>b; cout<<a+b<<'\\\\n'; }\"}" }
+      }
+    },
+    {
+      "name": "Submit Code Alias",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/solutions/submit",
+        "body": { "mode": "raw", "raw": "{\"problemId\":\"{{problemId}}\",\"code\":\"#include <bits/stdc++.h>\\nusing namespace std;\\nint main(){ long long a,b; cin>>a>>b; cout<<a+b<<'\\\\n'; }\"}" }
+      }
+    },
+    { "name": "Leaderboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/leaderboard" } },
+    { "name": "Profile", "request": { "method": "GET", "url": "{{baseUrl}}/api/profile" } }
+  ]
+}
