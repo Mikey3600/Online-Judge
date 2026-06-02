@@ -17,6 +17,7 @@ const buildDockerRunArgs = (containerName, workDir, image) => [
     '--memory', '128m',
     '--cpus', '1',
     '--pids-limit', '64',
+    '--user', '65534:65534',
     '--read-only',
     '--tmpfs', '/tmp:rw,nosuid,nodev,size=16m',
     '--security-opt', 'no-new-privileges',
@@ -107,3 +108,5 @@ const runCode = async (code, input = '') => {
 };
 
 module.exports = runCode;
+module.exports.buildDockerRunArgs = buildDockerRunArgs;
+module.exports.removeContainer = removeContainer;

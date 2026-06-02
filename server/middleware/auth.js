@@ -1,19 +1,33 @@
 const jwt = require('jsonwebtoken');
+const { sendError } = require('../utils/response');
+
+const extractBearerToken = (authorizationHeader = '') => {
+    const [scheme, token] = authorizationHeader.split(' ');
+    return scheme && scheme.toLowerCase() === 'bearer' ? token : null;
+};
 
 const verifyToken = (req, res, next) => {
-    const token = req.cookies.token;
+    const token = req.cookies?.token || extractBearerToken(req.headers.authorization);
 
     if (!token) {
-        return res.status(401).json({ message: 'Access denied. No token provided.' });
+        return sendError(res, 401, 'Access denied. No token provided.');
+    }
+
+    if (!process.env.JWT_SECRET) {
+        return sendError(res, 500, 'JWT_SECRET is not configured');
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded.userId) {
+            return sendError(res, 401, 'Invalid token payload');
+        }
         req.user = decoded;
-        next();
+        return next();
     } catch (err) {
-        res.status(401).json({ message: 'Invalid or expired token' });
+        return sendError(res, 401, 'Invalid or expired token');
     }
 };
 
 module.exports = verifyToken;
+module.exports.extractBearerToken = extractBearerToken;

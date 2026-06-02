@@ -1,11 +1,17 @@
 const User = require('../models/User');
 const Solution = require('../models/Solution');
+const { sendSuccess, sendError } = require('../utils/response');
+const { isValidObjectId } = require('../utils/validation');
 
 const getProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).select('fullName email dob');
+        if (!isValidObjectId(req.user.userId)) {
+            return sendError(res, 401, 'Invalid token payload');
+        }
+
+        const user = await User.findById(req.user.userId).select('fullName email dob createdAt');
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         const recentSubmissions = await Solution.find({ user: user._id })
@@ -13,9 +19,20 @@ const getProfile = async (req, res) => {
             .limit(10)
             .populate('problem', 'name code difficulty');
 
-        res.status(200).json({ user, recentSubmissions });
+        const stats = await Solution.aggregate([
+            { $match: { user: user._id } },
+            {
+                $group: {
+                    _id: '$verdict',
+                    count: { $sum: 1 },
+                    solvedProblems: { $addToSet: '$problem' }
+                }
+            }
+        ]);
+
+        return sendSuccess(res, 200, 'Profile fetched successfully', { user, recentSubmissions, stats });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 

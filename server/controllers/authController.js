@@ -1,23 +1,52 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { sendSuccess, sendError } = require('../utils/response');
+const { collectMissingFields, normalizeString } = require('../utils/validation');
+const { getAuthCookieOptions, getClearCookieOptions } = require('../utils/cookies');
 
-// REGISTER
+const createToken = (user) => {
+    if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    return jwt.sign(
+        { userId: user._id.toString() },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+    );
+};
+
+const toPublicUser = (user) => ({
+    id: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    dob: user.dob
+});
+
 const register = async (req, res) => {
     try {
-        const { fullName, email, password, dob } = req.body;
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email already registered' });
+        const missing = collectMissingFields(req.body, ['fullName', 'email', 'password']);
+        if (missing.length > 0) {
+            return sendError(res, 400, 'Missing required fields', { fields: missing });
         }
 
-        // Hash password
+        const fullName = normalizeString(req.body.fullName);
+        const email = normalizeString(req.body.email).toLowerCase();
+        const { password, dob } = req.body;
+
+        if (password.length < 6) {
+            return sendError(res, 400, 'Password must be at least 6 characters long');
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return sendError(res, 409, 'Email already registered');
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Save user
         const user = await User.create({
             fullName,
             email,
@@ -25,77 +54,47 @@ const register = async (req, res) => {
             dob
         });
 
-        // Sign JWT
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = createToken(user);
+        res.cookie('token', token, getAuthCookieOptions());
 
-        // Set httpOnly cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: false,        // set true in production (HTTPS)
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000   // 7 days in ms
-        });
-
-        res.status(201).json({
-            message: 'User registered successfully',
-            user: { id: user._id, fullName: user.fullName, email: user.email }
-        });
-
+        return sendSuccess(res, 201, 'User registered successfully', { user: toPublicUser(user) });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 
-// LOGIN
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const missing = collectMissingFields(req.body, ['email', 'password']);
+        if (missing.length > 0) {
+            return sendError(res, 400, 'Missing required fields', { fields: missing });
+        }
 
-        // Find user
+        const email = normalizeString(req.body.email).toLowerCase();
+        const { password } = req.body;
+
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+            return sendError(res, 401, 'Invalid credentials');
         }
 
-        // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
+            return sendError(res, 401, 'Invalid credentials');
         }
 
-        // Sign JWT
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = createToken(user);
+        res.cookie('token', token, getAuthCookieOptions());
 
-        // Set httpOnly cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
-
-        res.status(200).json({
-            message: 'Login successful',
-            user: { id: user._id, fullName: user.fullName, email: user.email }
-        });
-
+        return sendSuccess(res, 200, 'Login successful', { user: toPublicUser(user) });
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        return sendError(res, 500, 'Server error', err.message);
     }
 };
 
-// LOGOUT
 const logout = (req, res) => {
-    res.clearCookie('token');
-    res.status(200).json({ message: 'Logged out successfully' });
+    res.clearCookie('token', getClearCookieOptions());
+    return sendSuccess(res, 200, 'Logged out successfully');
 };
 
-module.exports = { register, login, logout };
+module.exports = { register, login, logout, createToken, toPublicUser };
