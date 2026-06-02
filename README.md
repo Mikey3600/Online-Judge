@@ -45,7 +45,7 @@ This refactor replaces that approach with a safer model: **one temporary directo
 
 ## ✨ Features
 
-### ✅ Current Features
+###  Current Features
 
 | Area | Capability |
 |---|---|
