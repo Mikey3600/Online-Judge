@@ -493,26 +493,7 @@ npm start
  
 ---
  
-## 📅 Development Log
- 
-| Day | Date | Task | Status |
-|-----|------|------|--------|
-| Day 1 | 26-05-2026 | Repo setup, README, project structure | Done |
-| Day 2 | 27-05-2026 | MongoDB schemas — User, Problem, Solution, TestCase | Done |
-| Day 3 | 28-05-2026 | Express server + MongoDB Atlas connection | Done |
-| Day 4 | 28-05-2026 | Auth — register, login, logout, JWT httpOnly cookie | Done |
-| Day 5 | 29-05-2026 | Problem CRUD + TestCase routes with JWT protection | Done |
-| Day 6 | 30-05-2026 | Submission pipeline + Leaderboard controller | Done |
-| Day 7 | 30-06-2026 | Ephemeral Docker containers + full pipeline tested | Done |
-| Day 8 | — | React frontend — routing, pages scaffold | 🔲 |
-| Day 9 | — | Connect frontend to backend | 🔲 |
-| Day 10 | — | Submission UI + verdict display | 🔲 |
-| Day 11 | — | Leaderboard page | 🔲 |
-| Day 12 | — | Profile page + submission history | 🔲 |
-| Day 13 | — | Testing, bug fixes, edge cases | 🔲 |
-| Day 14 | — | Deployment, final cleanup, demo | 🔲 |
- 
----
+
  
 ## ⚠️ Known Limitations
  
