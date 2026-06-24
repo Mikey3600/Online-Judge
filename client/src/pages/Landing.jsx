@@ -18,7 +18,7 @@ const Landing = () => {
                         </h1>
                         <p className="text-gray-400 text-base md:text-lg max-w-2xl leading-8">
                             A simple competitive programming workspace for solving problems, checking verdicts,
-                            and building a stronger coding habit one submission at a time.
+                            and building a stronger coding habit .
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3 pt-2">
                             <Link
