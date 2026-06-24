@@ -28,9 +28,9 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-            <div className="bg-gray-900 p-8 rounded-xl border border-gray-800 w-full max-w-md">
-                <h1 className="text-2xl font-bold text-white mb-6">Register</h1>
+        <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="max-w-md mx-auto mt-20 bg-gray-900 border border-gray-800 rounded p-8">
+                <h1 className="text-white text-xl font-semibold mb-6">Create account</h1>
                 {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -40,7 +40,7 @@ const Register = () => {
                             name="fullName"
                             value={form.fullName}
                             onChange={handleChange}
-                            className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-green-500"
+                            className="w-full bg-gray-950 border border-gray-800 text-white rounded px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
                             required
                         />
                     </div>
@@ -51,7 +51,7 @@ const Register = () => {
                             name="email"
                             value={form.email}
                             onChange={handleChange}
-                            className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-green-500"
+                            className="w-full bg-gray-950 border border-gray-800 text-white rounded px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
                             required
                         />
                     </div>
@@ -62,7 +62,7 @@ const Register = () => {
                             name="password"
                             value={form.password}
                             onChange={handleChange}
-                            className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-green-500"
+                            className="w-full bg-gray-950 border border-gray-800 text-white rounded px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
                             required
                         />
                     </div>
@@ -73,19 +73,19 @@ const Register = () => {
                             name="dob"
                             value={form.dob}
                             onChange={handleChange}
-                            className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-green-500"
+                            className="w-full bg-gray-950 border border-gray-800 text-white rounded px-3 py-2 focus:outline-none focus:border-blue-500 text-sm"
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-green-500 hover:bg-green-600 text-black font-bold py-2 rounded-lg transition disabled:opacity-50"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded text-sm mt-4 transition disabled:opacity-50"
                     >
                         {loading ? 'Registering...' : 'Register'}
                     </button>
                 </form>
                 <p className="text-gray-500 text-sm mt-4 text-center">
-                    Already have an account? <Link to="/login" className="text-green-400 hover:underline">Login</Link>
+                    Already have an account? <Link to="/login" className="text-blue-400 hover:underline">Login</Link>
                 </p>
             </div>
         </div>

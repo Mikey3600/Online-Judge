@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 
+const rankColor = (index) => {
+    if (index === 0) return 'text-[#FFD700]';
+    if (index === 1) return 'text-[#C0C0C0]';
+    if (index === 2) return 'text-[#CD7F32]';
+    return 'text-gray-400';
+};
+
 const Leaderboard = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,47 +19,39 @@ const Leaderboard = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className="text-gray-400 p-8">Loading...</div>;
+    if (loading) return <div className="max-w-6xl mx-auto px-6 py-8 text-gray-400">Loading...</div>;
 
     return (
-        <div className="max-w-4xl mx-auto px-6 py-10">
-            <div className="mb-8">
-                <h1 className="text-white text-3xl font-bold">Leaderboard</h1>
-                <p className="text-gray-500 mt-1">Ranked by problems solved</p>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                <div className="grid grid-cols-12 px-6 py-3 border-b border-gray-800 text-gray-500 text-xs font-medium uppercase tracking-wider">
-                    <span className="col-span-1">Rank</span>
-                    <span className="col-span-5">User</span>
-                    <span className="col-span-3">Solved</span>
-                    <span className="col-span-3">Last AC</span>
-                </div>
-
-                {data.length === 0 ? (
-                    <div className="px-6 py-12 text-center text-gray-500">No submissions yet.</div>
-                ) : (
-                    data.map((entry, index) => (
-                        <div key={index} className="grid grid-cols-12 px-6 py-4 border-b border-gray-800 last:border-0 items-center hover:bg-gray-800/50 transition">
-                            <span className="col-span-1 text-gray-400 font-bold">
-                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                            </span>
-                            <div className="col-span-5 flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-black font-bold text-sm">
-                                    {entry.user?.fullName?.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    <p className="text-white font-medium text-sm">{entry.user?.fullName}</p>
+        <div className="max-w-6xl mx-auto px-6 py-8">
+            <h1 className="text-white text-xl font-semibold mb-5">Leaderboard</h1>
+            <div className="border border-gray-800 bg-gray-950 rounded overflow-hidden">
+                <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-900 text-gray-500 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th className="px-4 py-3 font-medium w-28">Rank</th>
+                            <th className="px-4 py-3 font-medium">User</th>
+                            <th className="px-4 py-3 font-medium w-32">Solved</th>
+                            <th className="px-4 py-3 font-medium w-48">Last submission</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.length === 0 ? (
+                            <tr><td colSpan="4" className="px-4 py-10 text-center text-gray-500 border-t border-gray-800">No submissions yet.</td></tr>
+                        ) : data.map((entry, index) => (
+                            <tr key={entry.user?._id || index} className="border-t border-gray-800 hover:bg-gray-900 transition">
+                                <td className={`px-4 py-3 font-mono font-semibold ${rankColor(index)}`}>{index + 1}</td>
+                                <td className="px-4 py-3">
+                                    <p className="text-blue-400 font-medium">{entry.user?.fullName || 'Unknown user'}</p>
                                     <p className="text-gray-500 text-xs">{entry.user?.email}</p>
-                                </div>
-                            </div>
-                            <span className="col-span-3 text-green-400 font-bold">{entry.solvedCount}</span>
-                            <span className="col-span-3 text-gray-500 text-xs">
-                                {entry.lastAcceptedAt ? new Date(entry.lastAcceptedAt).toLocaleDateString() : '—'}
-                            </span>
-                        </div>
-                    ))
-                )}
+                                </td>
+                                <td className="px-4 py-3 text-gray-300 font-mono">{entry.solvedCount}</td>
+                                <td className="px-4 py-3 text-gray-500 text-xs">
+                                    {entry.lastAcceptedAt ? new Date(entry.lastAcceptedAt).toLocaleString() : '—'}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
