@@ -48,8 +48,7 @@ const Landing = () => {
                         </div>
                         <div className="mt-6 border-t border-gray-800 pt-5">
                             <p className="text-gray-500 text-sm leading-6">
-                                Minimal by design: no extra backend connection is needed on this landing page—just a clean
-                                entry point into your judge.
+                                A trustworthy company for  learning and growth.
                             </p>
                         </div>
                     </div>
