@@ -127,115 +127,115 @@ const Problem = () => {
 
     return (
         <>
-        {showPopup && verdict && (verdict.verdict === 'WA' || verdict.verdict === 'TLE') && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 relative">
-                    <button onClick={() => setShowPopup(false)} className="absolute top-3 right-3 text-gray-500 hover:text-white text-lg" aria-label="Close AI explanation popup">×</button>
-                    <div className={`flex items-center gap-2 font-mono text-sm ${verdictColor[verdict.verdict] || 'text-white'}`}>
-                        <span className={`h-2.5 w-2.5 rounded-full ${verdict.verdict === 'WA' ? 'bg-red-400' : 'bg-yellow-400'}`}></span>
-                        <span>{verdict.verdictLabel || verdict.verdict}</span>
-                    </div>
-                    <h2 className="text-white text-lg font-semibold mt-2">Want to know why?</h2>
-                    <p className="text-gray-400 text-sm mt-1">Click below and I'll explain what went wrong in simple steps.</p>
-                    <button onClick={startAiChat} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-semibold mt-4 w-full">Yes, explain it</button>
-                </div>
-            </div>
-        )}
-        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6">
-            <section className="bg-gray-950 border border-gray-800 rounded p-5">
-                <h1 className="text-white text-xl font-semibold">{problem.name}</h1>
-                <div className="flex items-center gap-3 mt-3 pb-4 border-b border-gray-800">
-                    <span className={`text-xs px-2 py-0.5 rounded border ${difficultyColor[problem.difficulty] || 'text-gray-400 border-gray-800'}`}>{problem.difficulty}</span>
-                    <span className="font-mono text-gray-500 text-sm">{problem.code}</span>
-                </div>
-                <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mt-5">{problem.statement}</p>
-
-                <div className="mt-6 space-y-4">
-                    <div>
-                        <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Input</p>
-                        <pre className="bg-gray-900 border border-gray-800 rounded p-3 font-mono text-sm text-gray-300 overflow-x-auto">{sample?.input || 'No sample input available.'}</pre>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Output</p>
-                        <pre className="bg-gray-900 border border-gray-800 rounded p-3 font-mono text-sm text-gray-300 overflow-x-auto">{sample?.output || 'No sample output available.'}</pre>
-                    </div>
-                </div>
-            </section>
-
-            <section className="space-y-4">
-                <div className="flex justify-end">
-                    <select className="bg-gray-900 border border-gray-800 text-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" value="cpp17" onChange={() => {}}>
-                        <option value="cpp17">C++17</option>
-                    </select>
-                </div>
-                <div className="bg-gray-950 border border-gray-800 rounded overflow-hidden min-h-80">
-                    <Editor
-                        height="420px"
-                        language="cpp"
-                        theme="vs-dark"
-                        value={code}
-                        onChange={val => setCode(val)}
-                        options={{ fontSize: 14, fontFamily: 'monospace', minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
-                    />
-                </div>
-                <div className="flex justify-end">
-                    <button onClick={handleSubmit} disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-semibold transition disabled:opacity-50">
-                        {submitting ? 'Judging...' : 'Submit'}
-                    </button>
-                </div>
-
-                {verdict && (
-                    <div className="bg-gray-900 border border-gray-800 rounded p-4">
-                        <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Verdict</p>
-                        <p className={`font-mono text-lg font-semibold ${verdictColor[verdict.verdict] || 'text-white'}`}>✓ {verdict.verdictLabel || verdict.verdict}</p>
-                        {verdict.failedTestCase && <p className="text-gray-500 text-sm mt-1">Failed on test case #{verdict.failedTestCase}</p>}
-                        {verdict.error && <pre className="text-red-400 text-xs mt-3 bg-gray-950 border border-gray-800 p-3 rounded overflow-x-auto">{verdict.error}</pre>}
-                    </div>
-                )}
-
-                {showChat && verdict && (
-                    <div ref={chatRef} className="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-4">
-                        <div className="flex items-center gap-2">
-                            <p className="text-white text-sm font-semibold">AI Assistant</p>
-                            <span className={`font-mono text-xs ${verdictColor[verdict.verdict] || 'text-gray-400'}`}>{verdict.verdictLabel || verdict.verdict}</span>
+            {showPopup && verdict && (verdict.verdict === 'WA' || verdict.verdict === 'TLE') && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 relative">
+                        <button onClick={() => setShowPopup(false)} className="absolute top-3 right-3 text-gray-500 hover:text-white text-lg" aria-label="Close AI explanation popup">×</button>
+                        <div className={`flex items-center gap-2 font-mono text-sm ${verdictColor[verdict.verdict] || 'text-white'}`}>
+                            <span className={`h-2.5 w-2.5 rounded-full ${verdict.verdict === 'WA' ? 'bg-red-400' : 'bg-yellow-400'}`}></span>
+                            <span>{verdict.verdictLabel || verdict.verdict}</span>
                         </div>
-                        <div className="max-h-80 overflow-y-auto space-y-3 mt-3 mb-3">
-                            {chatMessages.map((message, index) => (
-                                <div key={`${message.role}-${index}`} className={message.role === 'user' ? 'flex justify-end' : ''}>
-                                    <div className={message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'}>
-                                        <p className={message.role === 'user' ? 'text-blue-400 text-xs mb-1' : 'text-gray-500 text-xs mb-1'}>{message.role === 'user' ? 'You' : 'AI'}</p>
-                                        {message.role === 'user' ? (
-                                            <div className="bg-blue-600/20 border border-blue-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-                                                {message.text}
-                                            </div>
-                                        ) : (
-                                            <div className="bg-gray-800 rounded-lg p-3">
-                                                <ReactMarkdown className="prose prose-invert prose-sm max-w-none text-gray-300 text-sm leading-relaxed">
+                        <h2 className="text-white text-lg font-semibold mt-2">Want to know why?</h2>
+                        <p className="text-gray-400 text-sm mt-1">Click below and I'll explain what went wrong in simple steps.</p>
+                        <button onClick={startAiChat} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-semibold mt-4 w-full">Yes, explain it</button>
+                    </div>
+                </div>
+            )}
+            <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6">
+                <section className="bg-gray-950 border border-gray-800 rounded p-5">
+                    <h1 className="text-white text-xl font-semibold">{problem.name}</h1>
+                    <div className="flex items-center gap-3 mt-3 pb-4 border-b border-gray-800">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${difficultyColor[problem.difficulty] || 'text-gray-400 border-gray-800'}`}>{problem.difficulty}</span>
+                        <span className="font-mono text-gray-500 text-sm">{problem.code}</span>
+                    </div>
+                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap mt-5">{problem.statement}</p>
+
+                    <div className="mt-6 space-y-4">
+                        <div>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Input</p>
+                            <pre className="bg-gray-900 border border-gray-800 rounded p-3 font-mono text-sm text-gray-300 overflow-x-auto">{sample?.input || 'No sample input available.'}</pre>
+                        </div>
+                        <div>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Output</p>
+                            <pre className="bg-gray-900 border border-gray-800 rounded p-3 font-mono text-sm text-gray-300 overflow-x-auto">{sample?.output || 'No sample output available.'}</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="space-y-4">
+                    <div className="flex justify-end">
+                        <select className="bg-gray-900 border border-gray-800 text-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" value="cpp17" onChange={() => { }}>
+                            <option value="cpp17">C++17</option>
+                        </select>
+                    </div>
+                    <div className="bg-gray-950 border border-gray-800 rounded overflow-hidden min-h-80">
+                        <Editor
+                            height="420px"
+                            language="cpp"
+                            theme="vs-dark"
+                            value={code}
+                            onChange={val => setCode(val)}
+                            options={{ fontSize: 14, fontFamily: 'monospace', minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
+                        />
+                    </div>
+                    <div className="flex justify-end">
+                        <button onClick={handleSubmit} disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded text-sm font-semibold transition disabled:opacity-50">
+                            {submitting ? 'Judging...' : 'Submit'}
+                        </button>
+                    </div>
+
+                    {verdict && (
+                        <div className="bg-gray-900 border border-gray-800 rounded p-4">
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Verdict</p>
+                            <p className={`font-mono text-lg font-semibold ${verdictColor[verdict.verdict] || 'text-white'}`}>✓ {verdict.verdictLabel || verdict.verdict}</p>
+                            {verdict.failedTestCase && <p className="text-gray-500 text-sm mt-1">Failed on test case #{verdict.failedTestCase}</p>}
+                            {verdict.error && <pre className="text-red-400 text-xs mt-3 bg-gray-950 border border-gray-800 p-3 rounded overflow-x-auto">{verdict.error}</pre>}
+                        </div>
+                    )}
+
+                    {showChat && verdict && (
+                        <div ref={chatRef} className="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-4">
+                            <div className="flex items-center gap-2">
+                                <p className="text-white text-sm font-semibold">AI Assistant</p>
+                                <span className={`font-mono text-xs ${verdictColor[verdict.verdict] || 'text-gray-400'}`}>{verdict.verdictLabel || verdict.verdict}</span>
+                            </div>
+                            <div className="max-h-80 overflow-y-auto space-y-3 mt-3 mb-3">
+                                {chatMessages.map((message, index) => (
+                                    <div key={`${message.role}-${index}`} className={message.role === 'user' ? 'flex justify-end' : ''}>
+                                        <div className={message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'}>
+                                            <p className={message.role === 'user' ? 'text-blue-400 text-xs mb-1' : 'text-gray-500 text-xs mb-1'}>{message.role === 'user' ? 'You' : 'AI'}</p>
+                                            {message.role === 'user' ? (
+                                                <div className="bg-blue-600/20 border border-blue-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
                                                     {message.text}
-                                                </ReactMarkdown>
-                                            </div>
-                                        )}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-gray-800 rounded-lg p-3 text-gray-300 [&_p]:text-gray-300 [&_li]:text-gray-300 [&_strong]:text-white [&_code]:text-green-300">
+                                                    <ReactMarkdown>
+                                                        {message.text}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            <div ref={messagesEndRef} />
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+                            <div className="flex gap-2">
+                                <textarea
+                                    className="flex-1 bg-gray-950 border border-gray-800 text-white text-sm rounded px-3 py-2 resize-none focus:outline-none focus:border-blue-500"
+                                    rows={2}
+                                    placeholder="Ask a follow-up..."
+                                    value={chatInput}
+                                    onChange={e => setChatInput(e.target.value)}
+                                />
+                                <button onClick={sendChatMessage} disabled={chatLoading || !chatInput.trim()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold self-end disabled:opacity-50">
+                                    {chatLoading ? 'Sending...' : 'Send'}
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <textarea
-                                className="flex-1 bg-gray-950 border border-gray-800 text-white text-sm rounded px-3 py-2 resize-none focus:outline-none focus:border-blue-500"
-                                rows={2}
-                                placeholder="Ask a follow-up..."
-                                value={chatInput}
-                                onChange={e => setChatInput(e.target.value)}
-                            />
-                            <button onClick={sendChatMessage} disabled={chatLoading || !chatInput.trim()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold self-end disabled:opacity-50">
-                                {chatLoading ? 'Sending...' : 'Send'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </section>
-        </div>
+                    )}
+                </section>
+            </div>
         </>
     );
 };
