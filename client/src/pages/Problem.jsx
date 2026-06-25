@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import api from '../api/axios';
@@ -36,8 +36,14 @@ const Problem = () => {
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [aiLoading, setAiLoading] = useState('');
-    const [aiResponse, setAiResponse] = useState(null);
+    const [, setAiResponse] = useState(null);
+    const [showPopup, setShowPopup] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+    const chatRef = useRef(null);
+    const messagesEndRef = useRef(null);
 
     useEffect(() => {
         api.get(`/problems/${id}`)
@@ -58,6 +64,7 @@ const Problem = () => {
         try {
             const res = await api.post('/submit', { problemId: id, code });
             setVerdict(res.data.data);
+            setShowPopup(res.data.data && (res.data.data.verdict === 'WA' || res.data.data.verdict === 'TLE'));
         } catch (err) {
             setVerdict({ verdict: 'SE', verdictLabel: 'System Error', error: err.message });
         } finally {
@@ -65,16 +72,52 @@ const Problem = () => {
         }
     };
 
-    const handleAiRequest = async (type) => {
-        setAiLoading(type);
-        setAiResponse(null);
+    useEffect(() => {
+        if (showChat) {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+    }, [showChat]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
+
+    const getAiText = (res, key = 'hint') => res.data.data?.[key] || res.data.data?.response || res.data.message || res.data.data;
+
+    const startAiChat = async () => {
+        setShowChat(true);
+        setShowPopup(false);
+        setChatLoading(true);
+        setChatMessages([{ role: 'ai', text: '...' }]);
+
         try {
-            const res = await api.post(`/ai/${type}`, { problemId: id, code, verdict });
-            setAiResponse({ type, text: res.data.data?.hint || res.data.data?.review || res.data.message || res.data.data });
+            const res = await api.post('/ai/hint', { problemId: id, code, verdict });
+            const text = getAiText(res, 'hint');
+            setChatMessages([{ role: 'ai', text: typeof text === 'string' ? text : JSON.stringify(text) }]);
         } catch (err) {
-            setAiResponse({ type, text: err.response?.data?.message || 'AI response is unavailable right now.' });
+            setChatMessages([{ role: 'ai', text: err.response?.data?.message || 'AI response is unavailable right now.' }]);
         } finally {
-            setAiLoading('');
+            setChatLoading(false);
+        }
+    };
+
+    const sendChatMessage = async () => {
+        const text = chatInput.trim();
+        if (!text || chatLoading) return;
+
+        const nextMessages = [...chatMessages, { role: 'user', text }];
+        setChatMessages(nextMessages);
+        setChatInput('');
+        setChatLoading(true);
+
+        try {
+            const res = await api.post('/ai/chat', { problemId: id, code, verdict, messages: nextMessages });
+            const aiText = getAiText(res, 'reply');
+            setChatMessages([...nextMessages, { role: 'ai', text: typeof aiText === 'string' ? aiText : JSON.stringify(aiText) }]);
+        } catch (err) {
+            setChatMessages([...nextMessages, { role: 'ai', text: err.response?.data?.message || 'AI response is unavailable right now.' }]);
+        } finally {
+            setChatLoading(false);
         }
     };
 
@@ -82,6 +125,21 @@ const Problem = () => {
     if (error) return <div className="max-w-6xl mx-auto px-6 py-8 text-red-400">{error}</div>;
 
     return (
+        <>
+        {showPopup && verdict && (verdict.verdict === 'WA' || verdict.verdict === 'TLE') && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 relative">
+                    <button onClick={() => setShowPopup(false)} className="absolute top-3 right-3 text-gray-500 hover:text-white text-lg" aria-label="Close AI explanation popup">×</button>
+                    <div className={`flex items-center gap-2 font-mono text-sm ${verdictColor[verdict.verdict] || 'text-white'}`}>
+                        <span className={`h-2.5 w-2.5 rounded-full ${verdict.verdict === 'WA' ? 'bg-red-400' : 'bg-yellow-400'}`}></span>
+                        <span>{verdict.verdictLabel || verdict.verdict}</span>
+                    </div>
+                    <h2 className="text-white text-lg font-semibold mt-2">Want to know why?</h2>
+                    <p className="text-gray-400 text-sm mt-1">Click below and I'll explain what went wrong in simple steps.</p>
+                    <button onClick={startAiChat} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded text-sm font-semibold mt-4 w-full">Yes, explain it</button>
+                </div>
+            </div>
+        )}
         <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[45%_55%] gap-6">
             <section className="bg-gray-950 border border-gray-800 rounded p-5">
                 <h1 className="text-white text-xl font-semibold">{problem.name}</h1>
@@ -131,20 +189,45 @@ const Problem = () => {
                         <p className={`font-mono text-lg font-semibold ${verdictColor[verdict.verdict] || 'text-white'}`}>✓ {verdict.verdictLabel || verdict.verdict}</p>
                         {verdict.failedTestCase && <p className="text-gray-500 text-sm mt-1">Failed on test case #{verdict.failedTestCase}</p>}
                         {verdict.error && <pre className="text-red-400 text-xs mt-3 bg-gray-950 border border-gray-800 p-3 rounded overflow-x-auto">{verdict.error}</pre>}
-                        <div className="flex flex-wrap gap-3 mt-4">
-                            <button onClick={() => handleAiRequest('hint')} disabled={!!aiLoading} className="text-yellow-400 border border-yellow-800 px-4 py-1.5 rounded text-sm disabled:opacity-50">{aiLoading === 'hint' ? 'Loading...' : 'Get a hint'}</button>
-                            <button onClick={() => handleAiRequest('review')} disabled={!!aiLoading} className="text-purple-400 border border-purple-800 px-4 py-1.5 rounded text-sm disabled:opacity-50">{aiLoading === 'review' ? 'Loading...' : 'Review my code'}</button>
+                    </div>
+                )}
+
+                {showChat && verdict && (
+                    <div ref={chatRef} className="bg-gray-900 border border-gray-800 rounded-lg p-4 mt-4">
+                        <div className="flex items-center gap-2">
+                            <p className="text-white text-sm font-semibold">AI Assistant</p>
+                            <span className={`font-mono text-xs ${verdictColor[verdict.verdict] || 'text-gray-400'}`}>{verdict.verdictLabel || verdict.verdict}</span>
                         </div>
-                        {aiResponse && (
-                            <div className="bg-gray-900 border border-gray-800 rounded p-4 text-gray-300 text-sm mt-3 whitespace-pre-wrap">
-                                <p className="text-gray-500 text-xs uppercase mb-2">{aiResponse.type === 'hint' ? 'AI Hint' : 'AI Code Review'}</p>
-                                {typeof aiResponse.text === 'string' ? aiResponse.text : JSON.stringify(aiResponse.text)}
-                            </div>
-                        )}
+                        <div className="max-h-80 overflow-y-auto space-y-3 mt-3 mb-3">
+                            {chatMessages.map((message, index) => (
+                                <div key={`${message.role}-${index}`} className={message.role === 'user' ? 'flex justify-end' : ''}>
+                                    <div className={message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'}>
+                                        <p className={message.role === 'user' ? 'text-blue-400 text-xs mb-1' : 'text-gray-500 text-xs mb-1'}>{message.role === 'user' ? 'You' : 'AI'}</p>
+                                        <div className={message.role === 'user' ? 'bg-blue-600/20 border border-blue-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap' : 'bg-gray-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap'}>
+                                            {message.text}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        <div className="flex gap-2">
+                            <textarea
+                                className="flex-1 bg-gray-950 border border-gray-800 text-white text-sm rounded px-3 py-2 resize-none focus:outline-none focus:border-blue-500"
+                                rows={2}
+                                placeholder="Ask a follow-up..."
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                            />
+                            <button onClick={sendChatMessage} disabled={chatLoading || !chatInput.trim()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold self-end disabled:opacity-50">
+                                {chatLoading ? 'Sending...' : 'Send'}
+                            </button>
+                        </div>
                     </div>
                 )}
             </section>
         </div>
+        </>
     );
 };
 
