@@ -11,6 +11,7 @@ const leaderboardRoutes = require('./routes/leaderboard');
 const solutionRoutes = require('./routes/solutions');
 const profileRoutes = require('./routes/profile');
 const submitRoutes = require('./routes/submit');
+const aiRoutes = require('./routes/ai');
 const { sendSuccess, sendError } = require('./utils/response');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/solutions', solutionRoutes);
 app.use('/api/submit', submitRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use((req, res) => sendError(res, 404, 'Route not found'));
 
