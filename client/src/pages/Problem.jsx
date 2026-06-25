@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import api from '../api/axios';
@@ -203,9 +204,17 @@ const Problem = () => {
                                 <div key={`${message.role}-${index}`} className={message.role === 'user' ? 'flex justify-end' : ''}>
                                     <div className={message.role === 'user' ? 'max-w-[85%]' : 'max-w-full'}>
                                         <p className={message.role === 'user' ? 'text-blue-400 text-xs mb-1' : 'text-gray-500 text-xs mb-1'}>{message.role === 'user' ? 'You' : 'AI'}</p>
-                                        <div className={message.role === 'user' ? 'bg-blue-600/20 border border-blue-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap' : 'bg-gray-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap'}>
-                                            {message.text}
-                                        </div>
+                                        {message.role === 'user' ? (
+                                            <div className="bg-blue-600/20 border border-blue-800 rounded-lg p-3 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                                                {message.text}
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-800 rounded-lg p-3">
+                                                <ReactMarkdown className="prose prose-invert prose-sm max-w-none text-gray-300 text-sm leading-relaxed">
+                                                    {message.text}
+                                                </ReactMarkdown>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
