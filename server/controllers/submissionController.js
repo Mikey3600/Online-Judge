@@ -23,10 +23,6 @@ const submitCode = async (req, res) => {
         for (let tc of testCases) {
             const result = await runCode(code, tc.input);
 
-            console.log('OUTPUT:', JSON.stringify(result.output));
-            console.log('EXPECTED:', JSON.stringify(tc.output.trim()));
-            console.log('VERDICT FROM RUNNER:', result.verdict);
-
             if (result.verdict === 'Compilation Error') { verdict = 'Compilation Error'; break; }
             if (result.verdict === 'Time Limit Exceeded') { verdict = 'Time Limit Exceeded'; break; }
             if (result.verdict === 'Runtime Error') { verdict = 'Runtime Error'; break; }
