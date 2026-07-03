@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -15,18 +16,21 @@ const ProtectedRoute = ({ children }) => {
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/problems/:id" element={<Problem />} />
-      <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <Profile />
-        </ProtectedRoute>
-      } />
-    </Routes>
+    <div className="min-h-screen bg-gray-950">
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/problems/:id" element={<Problem />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </div>
   );
 };
 
